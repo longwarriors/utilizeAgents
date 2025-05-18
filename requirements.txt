@@ -1,0 +1,11 @@
+browser-use
+pyperclip
+pydantic-ai
+gradio
+json-repair
+langchain-mistralai
+MainContentExtractor
+langchain-ibm
+langchain_mcp_adapters
+langgraph
+langchain-community
