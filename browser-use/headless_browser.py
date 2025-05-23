@@ -11,6 +11,7 @@ from browser_use import Agent, BrowserConfig, Browser
 # Basic configuration
 # https://docs.browser-use.com/customize/browser-settings
 config = BrowserConfig(
+    # Headless mode is not recommended. Many sites will detect and block all headless browsers.
     headless=True,  # 启用 headless 模式
     disable_security=False
 )
