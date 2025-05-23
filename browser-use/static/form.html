@@ -1,0 +1,114 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Information Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        label { display: block; margin: 10px 0 5px; }
+        input, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .message { margin-top: 10px; color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Paper Information Form</h1>
+    <form id="paperForm" action="/submit" method="POST">
+        <label for="title">标题 (Title)</label>
+        <input type="text" id="title" name="title" required>
+
+        <label for="authors">作者 (Authors)</label>
+        <input type="text" id="authors" name="authors" required>
+
+        <label for="affiliation">单位 (Affiliation)</label>
+        <input type="text" id="affiliation" name="affiliation">
+
+        <label for="date">日期 (Date)</label>
+        <input type="text" id="date" name="date">
+
+        <label for="abstract">摘要 (Abstract)</label>
+        <textarea id="abstract" name="abstract" rows="4"></textarea>
+
+        <label for="introduction">引言 (Introduction)</label>
+        <textarea id="introduction" name="introduction" rows="4"></textarea>
+
+        <label for="funding">资助 (Funding)</label>
+        <textarea id="funding" name="funding" rows="4"></textarea>
+
+        <label for="conclusion">结论 (Conclusion)</label>
+        <textarea id="conclusion" name="conclusion" rows="4"></textarea>
+
+        <button type="submit">提交 (Submit)</button>
+    </form>
+
+    <div id="message" class="message"></div>
+    <div id="error" class="error"></div>
+
+    <script>
+        document.getElementById('paperForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('message').textContent = '提交成功！数据已保存。';
+                    document.getElementById('error').textContent = '';
+                    this.reset(); // 清空表单
+                } else {
+                    document.getElementById('error').textContent = `提交失败：${result.error}`;
+                    document.getElementById('message').textContent = '';
+                }
+            } catch (err) {
+                document.getElementById('error').textContent = `网络错误：${err.message}`;
+                document.getElementById('message').textContent = '';
+            }
+        });
+    </script>
+</body>
+</html>
