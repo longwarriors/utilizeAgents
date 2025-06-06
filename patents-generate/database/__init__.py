@@ -1,0 +1,1 @@
+from .patent_db import PatentDB
